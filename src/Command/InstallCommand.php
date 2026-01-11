@@ -134,10 +134,17 @@ class InstallCommand extends Command
             => 'envFile: path.resolve(__dirname, "config/.env")',
             'publicDir: "public/build",'
             => 'publicDir: "webroot/build",',
+            'FullReload(["templates/*/"])'
+            => 'FullReload(["templates/**/*"])',
+            'host: localIPs["Ethernet"] ?? localIPs["Wi-Fi"] ?? "0.0.0.0"'
+            => 'host: process.env.DDEV_HOSTNAME || (localIPs["Ethernet"] ?? localIPs["Wi-Fi"] ?? "0.0.0.0")',
         ];
 
         // Apply replacements
         $newContent = str_replace(array_keys($replacements), array_values($replacements), $content);
+
+        // Update .gitignore with Vite entries
+        $this->updateGitignore($io);
 
         // Save back
         file_put_contents($file, $newContent);
@@ -169,5 +176,28 @@ class InstallCommand extends Command
         });
 
         return $process->getExitCode();
+    }
+
+    protected function updateGitignore(ConsoleIo $io): void
+    {
+        $gitignorePath = ROOT . '/.gitignore';
+        $viteEntries = [
+            '# Vite',
+            'hot',
+            '/webroot/build/',
+        ];
+
+        $content = file_exists($gitignorePath) ? file_get_contents($gitignorePath) : '';
+
+        // Check if Vite section already exists
+        if (str_contains($content, '# Vite')) {
+            return;
+        }
+
+        // Add Vite entries to .gitignore
+        $viteSection = PHP_EOL . implode(PHP_EOL, $viteEntries) . PHP_EOL;
+        file_put_contents($gitignorePath, $content . $viteSection);
+
+        $io->success('✅ Updated .gitignore with Vite entries');
     }
 }
