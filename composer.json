@@ -1,7 +1,6 @@
 {
   "name": "mahankals/cakephp-vite-plugin",
-  "version": "1.0.0",
-  "description": "CakePHP plugin to integrate Vite with PHP using php-vite-plugin",
+  "description": "CakePHP plugin to integrate Vite with PHP for modern frontend asset bundling",
   "keywords": [
     "cakephp",
     "vite",
