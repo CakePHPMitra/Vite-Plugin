@@ -6,7 +6,15 @@ Configuration for CakePhpViteHelper involves both Vite and CakePHP settings.
 
 ## Vite Configuration
 
-After running `bin/cake vite-helper install`, a `vite.config.js` is created:
+After running `bin/cake vite-helper install`, a `vite.config.js` is created with CakePHP-specific settings automatically applied:
+
+- Environment file path set to `config/.env`
+- Build output directory set to `webroot/build`
+- Template file watching configured with recursive glob pattern (`templates/**/*`)
+- DDEV hostname support for development server host
+- `.gitignore` updated with Vite entries (`hot`, `/webroot/build/`)
+
+Example configuration:
 
 ```js
 import { defineConfig } from 'vite';

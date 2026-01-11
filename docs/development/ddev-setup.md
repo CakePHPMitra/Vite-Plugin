@@ -2,7 +2,7 @@
 
 ## Overview
 
-CakePhpViteHelper works seamlessly with DDEV for local development.
+CakePhpViteHelper works seamlessly with DDEV for local development. The install command automatically configures the Vite host to use `DDEV_HOSTNAME` when available.
 
 ## Configuration
 
@@ -16,9 +16,7 @@ web_extra_exposed_ports:
     https_port: 5173
 ```
 
-## Restart DDEV
-
-After updating the configuration:
+Then restart DDEV:
 
 ```bash
 ddev restart
@@ -47,36 +45,16 @@ With DDEV, the Vite dev server is accessible at:
 https://your-project.ddev.site:5173
 ```
 
+## Automatic DDEV Support
+
+The install command automatically configures `vite.config.js` to detect DDEV environments via the `DDEV_HOSTNAME` environment variable. No manual host configuration is required.
+
 ## Troubleshooting
 
 ### Port Already in Use
 
 If port 5173 is already in use:
 
-1. Change the port in `vite.config.js`:
-   ```js
-   server: {
-       port: 5174,
-   }
-   ```
-
+1. Change the port in `vite.config.js`
 2. Update `.ddev/config.yaml` to match
-
 3. Restart DDEV
-
-### HMR Not Working
-
-Ensure your `vite.config.js` has the correct server settings:
-
-```js
-server: {
-    host: '0.0.0.0',
-    port: 5173,
-    strictPort: true,
-    hmr: {
-        host: 'your-project.ddev.site',
-        port: 5173,
-        protocol: 'wss',
-    },
-},
-```
