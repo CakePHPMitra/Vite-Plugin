@@ -23,35 +23,45 @@ Integrate Vite with CakePHP 5 for modern frontend asset bundling with hot module
 
 ## Installation
 
-1. Copy the plugin to `plugins/cakephp-vite-plugin`
+### Step 1: Add Repository
 
-2. Add autoload entry to `composer.json`:
+Add the GitHub repository to your `composer.json`:
 
 ```json
 {
-    "autoload": {
-        "psr-4": {
-            "CakePhpViteHelper\\": "plugins/cakephp-vite-plugin/src/"
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/CakePHPMitra/Vite-Plugin"
         }
-    }
+    ]
 }
 ```
 
-3. Regenerate autoloader:
+### Step 2: Install via Composer
 
 ```bash
-composer dump-autoload
+composer require cakephpmitra/vite-plugin:dev-main
 ```
 
-4. Load the plugin in `config/plugins.php`:
+### Step 3: Load Plugin
+
+**Option A - Using CLI:**
+
+```bash
+bin/cake plugin load CakePhpViteHelper
+```
+
+**Option B - In Application.php:**
 
 ```php
-return [
-    'CakePhpViteHelper' => [],
-];
+// In src/Application.php bootstrap() method
+$this->addPlugin('CakePhpViteHelper');
 ```
 
-5. Install Node packages with Vite configuration:
+### Step 4: Setup Vite
+
+Install Node packages and generate Vite configuration:
 
 ```bash
 bin/cake vite-helper install
@@ -101,7 +111,11 @@ See the [docs](docs/) folder for detailed documentation:
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome!
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Issues
+
+Report bugs and feature requests on the [Issue Tracker](https://github.com/CakePHPMitra/Vite-Plugin/issues).
 
 ## Author
 
