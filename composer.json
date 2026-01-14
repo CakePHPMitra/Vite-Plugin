@@ -1,5 +1,5 @@
 {
-  "name": "CakePHPMitra/vite-plugin",
+  "name": "cakephpmitra/vite-plugin",
   "description": "CakePHP plugin to integrate Vite with PHP for modern frontend asset bundling",
   "keywords": [
     "cakephp",
