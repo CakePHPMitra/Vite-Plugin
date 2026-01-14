@@ -17,6 +17,7 @@ class ViteHelperTest extends TestCase
     protected View $view;
     protected string $testManifestPath;
     protected string $testHotFile;
+    protected mixed $originalDebug;
 
     /**
      * Setup method
