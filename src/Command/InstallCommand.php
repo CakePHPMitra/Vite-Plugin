@@ -134,7 +134,7 @@ class InstallCommand extends Command
             => 'envFile: path.resolve(__dirname, "config/.env")',
             'publicDir: "public/build",'
             => 'publicDir: "webroot/build",',
-            'FullReload(["templates/*/"])'
+            'FullReload(["views/**/*"])'
             => 'FullReload(["templates/**/*"])',
             'host: localIPs["Ethernet"] ?? localIPs["Wi-Fi"] ?? "0.0.0.0"'
             => 'host: process.env.DDEV_HOSTNAME || (localIPs["Ethernet"] ?? localIPs["Wi-Fi"] ?? "0.0.0.0")',
@@ -145,6 +145,9 @@ class InstallCommand extends Command
 
         // Update .gitignore with Vite entries
         $this->updateGitignore($io);
+
+        // Create DDEV config if DDEV is detected
+        $this->createDdevConfig($io);
 
         // Save back
         file_put_contents($file, $newContent);
@@ -199,5 +202,35 @@ class InstallCommand extends Command
         file_put_contents($gitignorePath, $content . $viteSection);
 
         $io->success('✅ Updated .gitignore with Vite entries');
+    }
+
+    protected function createDdevConfig(ConsoleIo $io): void
+    {
+        $ddevDir = ROOT . '/.ddev';
+        if (!file_exists($ddevDir . '/config.yaml')) {
+            return; // Not a DDEV project
+        }
+
+        $configFile = $ddevDir . '/config.vite.yaml';
+        if (file_exists($configFile)) {
+            $io->out('ℹ️  DDEV Vite config already exists');
+            return;
+        }
+
+        $content = <<<YAML
+web_extra_exposed_ports:
+  - name: vite
+    container_port: 5173
+    http_port: 5172
+    https_port: 5173
+
+hooks:
+  post-start:
+    - exec: "[ -f package.json ] && npm install || true"
+    - exec: "[ -f vite.config.js ] && (npm run dev > /dev/null 2>&1 &) || true"
+YAML;
+
+        file_put_contents($configFile, $content . PHP_EOL);
+        $io->success('✅ Created .ddev/config.vite.yaml');
     }
 }
