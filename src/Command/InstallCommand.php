@@ -32,6 +32,49 @@ class InstallCommand extends Command
         return self::COMMAND_NAME;
     }
 
+    /**
+     * SECURITY: Validate that a path is within the project root.
+     * Prevents directory traversal attacks.
+     *
+     * @param string $path Path to validate
+     * @return bool True if path is safe
+     */
+    protected function isPathSafe(string $path): bool
+    {
+        $realPath = realpath(dirname($path));
+        $realRoot = realpath(ROOT);
+
+        // If directory doesn't exist yet, check parent
+        if ($realPath === false) {
+            $realPath = realpath(dirname(dirname($path)));
+        }
+
+        if ($realPath === false || $realRoot === false) {
+            return false;
+        }
+
+        // Ensure path is within ROOT
+        return str_starts_with($realPath, $realRoot);
+    }
+
+    /**
+     * SECURITY: Safe file write with path validation
+     *
+     * @param string $path File path
+     * @param string $content Content to write
+     * @param ConsoleIo $io Console IO for error messages
+     * @return bool True if successful
+     */
+    protected function safeFileWrite(string $path, string $content, ConsoleIo $io): bool
+    {
+        if (!$this->isPathSafe($path)) {
+            $io->err("Security error: Path '$path' is outside project root");
+            return false;
+        }
+
+        return file_put_contents($path, $content) !== false;
+    }
+
     protected function buildOptionParser(ConsoleOptionParser $parser): ConsoleOptionParser
     {
         $parser->setDescription('Install and configure Vite for CakePHP project')
@@ -79,10 +122,13 @@ class InstallCommand extends Command
                 ],
                 'devDependencies' => new \stdClass(),
             ];
-            file_put_contents(
+            if (!$this->safeFileWrite(
                 $packageJsonPath,
-                json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL
-            );
+                json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL,
+                $io
+            )) {
+                return static::CODE_ERROR;
+            }
             $io->success('✅ Created package.json');
         } else {
             // Merge required scripts into existing package.json
@@ -94,10 +140,13 @@ class InstallCommand extends Command
                 'build' => 'vite build',
                 'watch' => 'vite build --watch',
             ]);
-            file_put_contents(
+            if (!$this->safeFileWrite(
                 $packageJsonPath,
-                json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL
-            );
+                json_encode($package, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL,
+                $io
+            )) {
+                return static::CODE_ERROR;
+            }
             $io->success('✅ Updated package.json with Vite scripts');
         }
 
@@ -149,8 +198,11 @@ class InstallCommand extends Command
         // Create DDEV config if DDEV is detected
         $this->createDdevConfig($io);
 
-        // Save back
-        file_put_contents($file, $newContent);
+        // Save back vite.config.js
+        if (!$this->safeFileWrite($file, $newContent, $io)) {
+            $io->err('❌ Failed to save vite.config.js');
+            return static::CODE_ERROR;
+        }
         $version = Configure::version(); // gets CakePHP version
 
         $io->out('');
@@ -199,7 +251,10 @@ class InstallCommand extends Command
 
         // Add Vite entries to .gitignore
         $viteSection = PHP_EOL . implode(PHP_EOL, $viteEntries) . PHP_EOL;
-        file_put_contents($gitignorePath, $content . $viteSection);
+        if (!$this->safeFileWrite($gitignorePath, $content . $viteSection, $io)) {
+            $io->err('⚠️  Could not update .gitignore');
+            return;
+        }
 
         $io->success('✅ Updated .gitignore with Vite entries');
     }
@@ -230,7 +285,10 @@ hooks:
     - exec: "[ -f vite.config.js ] && (npm run dev > /dev/null 2>&1 &) || true"
 YAML;
 
-        file_put_contents($configFile, $content . PHP_EOL);
+        if (!$this->safeFileWrite($configFile, $content . PHP_EOL, $io)) {
+            $io->err('⚠️  Could not create DDEV config');
+            return;
+        }
         $io->success('✅ Created .ddev/config.vite.yaml');
     }
 }

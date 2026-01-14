@@ -27,14 +27,31 @@ class ViteHelper extends Helper
     }
   }
 
+  /**
+   * Check timeout for dev server connection (seconds)
+   */
+  protected int $connectionTimeout = 2;
+
   protected function isDevServerRunning(): bool
   {
     if (Configure::read('debug') === false) {
       return false;
     }
 
-    $headers = @get_headers($this->devServerUrl);
-    return $headers && strpos($headers[0], '200');
+    // SECURITY: Use stream context with timeout to prevent DoS via slow server
+    $context = stream_context_create([
+      'http' => [
+        'timeout' => $this->connectionTimeout,
+        'method' => 'HEAD', // Only fetch headers, not body
+      ],
+      'ssl' => [
+        'verify_peer' => false, // Dev server typically uses self-signed cert
+        'verify_peer_name' => false,
+      ],
+    ]);
+
+    $headers = @get_headers($this->devServerUrl, false, $context);
+    return $headers && strpos($headers[0], '200') !== false;
   }
 
   public function url(string $entry): string
@@ -52,14 +69,16 @@ class ViteHelper extends Helper
 
   public function asset(array $entries): string
   {
+    $tags = [];
     if ($this->isDevServerRunning()) {
-      $tags = ['<script type="module" src="' . $this->devServerUrl . '/@vite/client"></script>'];
+      $tags[] = '<script type="module" src="' . h($this->devServerUrl) . '/@vite/client"></script>';
     }
     foreach ($entries as $entry) {
+      $url = h($this->url($entry));
       if (str_ends_with($entry, '.css')) {
-        $tags[] = '<link rel="stylesheet" href="' . $this->url($entry) . '">';
+        $tags[] = '<link rel="stylesheet" href="' . $url . '">';
       } else {
-        $tags[] = '<script type="module" src="' . $this->url($entry) . '"></script>';
+        $tags[] = '<script type="module" src="' . $url . '"></script>';
       }
     }
     return implode("\n", $tags);
