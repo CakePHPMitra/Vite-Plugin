@@ -6,6 +6,7 @@ namespace CakePhpViteHelper\View\Helper;
 
 use Cake\View\Helper;
 use Cake\Core\Configure;
+use Cake\Routing\Router;
 
 class ViteHelper extends Helper
 {
@@ -64,7 +65,7 @@ class ViteHelper extends Helper
       throw new \Exception("Vite manifest ($this->manifestPath) not found");
     }
     $manifest = json_decode(file_get_contents($this->manifestPath), true);
-    return '/build/' . $manifest[$entry]['file'];
+    return Router::url('/build/' . $manifest[$entry]['file']);
   }
 
   public function asset(array $entries): string

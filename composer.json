@@ -23,6 +23,11 @@
       "CakePhpViteHelper\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "CakePhpViteHelper\\Test\\": "tests/"
+    }
+  },
   "extra": {
       "cakephp-plugin": true
   },

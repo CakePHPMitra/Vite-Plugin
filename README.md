@@ -95,6 +95,14 @@ Production build:
 npm run build
 ```
 
+## Important: Subdirectory Deployments
+
+When deploying your CakePHP app under a subdirectory/alias (e.g., `https://example.com/myapp/`), asset URLs are automatically handled using `Router::url()`.
+
+This ensures assets like `/build/assets/app.js` correctly become `/myapp/build/assets/app.js`.
+
+**No additional configuration required** - the helper auto-detects the base path.
+
 ## Documentation
 
 See the [docs](docs/) folder for detailed documentation:
