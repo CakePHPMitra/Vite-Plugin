@@ -1,12 +1,12 @@
 # DDEV Setup
 
-## Overview
+CakePhpViteHelper works seamlessly with DDEV for local development.
 
-CakePhpViteHelper works seamlessly with DDEV for local development. The install command automatically configures the Vite host to use `DDEV_HOSTNAME` when available.
+## Setup
 
-## Configuration
+### 1. Expose Vite Port
 
-Add the following to your `.ddev/config.yaml`:
+Create `.ddev/config.vite.yaml`:
 
 ```yaml
 web_extra_exposed_ports:
@@ -14,47 +14,72 @@ web_extra_exposed_ports:
     container_port: 5173
     http_port: 5172
     https_port: 5173
+
+hooks:
+  post-start:
+    - exec: "[ -f package.json ] && npm install || true"
+    - exec: "[ -f vite.config.js ] && (npm run dev > /dev/null 2>&1 &) && sleep 3 && echo \"https://${DDEV_HOSTNAME}:5173\" > hot || true"
 ```
 
-Then restart DDEV:
+### 2. Restart DDEV
 
 ```bash
 ddev restart
 ```
 
-## Running Vite
+Done! Vite auto-starts with DDEV and HMR works automatically.
 
-### Inside DDEV Container
+## Running Vite Manually
 
-```bash
-ddev ssh
-npm run dev
-```
-
-### Outside DDEV Container
+If you prefer manual control, skip the hooks and run:
 
 ```bash
 ddev exec npm run dev
+ddev exec 'echo "https://${DDEV_HOSTNAME}:5173" > hot'
 ```
 
-## Accessing Vite Dev Server
+## Production Build
 
-With DDEV, the Vite dev server is accessible at:
-
+```bash
+ddev exec npm run build
 ```
-https://your-project.ddev.site:5173
-```
-
-## Automatic DDEV Support
-
-The install command automatically configures `vite.config.js` to detect DDEV environments via the `DDEV_HOSTNAME` environment variable. No manual host configuration is required.
 
 ## Troubleshooting
 
+### 403 Forbidden from Vite
+
+Add `allowedHosts` to `vite.config.js`:
+
+```js
+server: {
+    host: process.env.DDEV_HOSTNAME || '0.0.0.0',
+    port: 5173,
+    allowedHosts: [
+        process.env.DDEV_HOSTNAME,
+        '.localhost.dev',
+        '.ddev.site',
+        'localhost',
+    ].filter(Boolean),
+},
+```
+
+### "Vite manifest not found" Error
+
+Check if hot file has correct URL:
+
+```bash
+ddev exec "cat hot"
+# Should show: https://your-project.ddev.site:5173
+```
+
+Fix it:
+
+```bash
+ddev exec 'echo "https://${DDEV_HOSTNAME}:5173" > hot'
+```
+
 ### Port Already in Use
 
-If port 5173 is already in use:
-
-1. Change the port in `vite.config.js`
-2. Update `.ddev/config.yaml` to match
+1. Change port in `vite.config.js`
+2. Update `.ddev/config.vite.yaml` to match
 3. Restart DDEV

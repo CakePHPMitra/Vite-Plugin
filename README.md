@@ -12,6 +12,7 @@ Integrate Vite with CakePHP 5 for modern frontend asset bundling with hot module
 - Hot Module Replacement (HMR) with live reload
 - DDEV support out of the box
 - CLI command for quick setup
+- Works with and without Docker/DDEV
 
 ## Requirements
 
@@ -39,19 +40,22 @@ Integrate Vite with CakePHP 5 for modern frontend asset bundling with hot module
 2. Install via Composer:
 
 ```bash
-composer require CakePHPMitra/vite-plugin:dev-main
+composer require cakephpmitra/vite-plugin:dev-main
 ```
 
-3. Load the plugin:
+3. Load the plugin in `config/plugins.php`:
+
+```php
+return [
+    // ... other plugins
+    'CakePhpViteHelper' => [],
+];
+```
+
+Or via CLI:
 
 ```bash
 bin/cake plugin load CakePhpViteHelper
-```
-
-Or add to `src/Application.php` in the `bootstrap()` method:
-
-```php
-$this->addPlugin('CakePhpViteHelper');
 ```
 
 4. Install Node packages with Vite configuration:
@@ -95,6 +99,42 @@ Production build:
 npm run build
 ```
 
+## DDEV Setup
+
+If using DDEV, create `.ddev/config.vite.yaml`:
+
+```yaml
+web_extra_exposed_ports:
+  - name: vite
+    container_port: 5173
+    http_port: 5172
+    https_port: 5173
+
+hooks:
+  post-start:
+    - exec: "[ -f package.json ] && npm install || true"
+    - exec: "[ -f vite.config.js ] && (npm run dev > /dev/null 2>&1 &) && sleep 3 && echo \"https://${DDEV_HOSTNAME}:5173\" > hot || true"
+```
+
+Then restart DDEV:
+
+```bash
+ddev restart
+```
+
+See [DDEV Setup Guide](docs/development/ddev-setup.md) for detailed instructions and troubleshooting.
+
+## How It Works
+
+The `ViteHelper` uses a `hot` file to determine the development server URL:
+
+| Mode | Hot File | Behavior |
+|------|----------|----------|
+| Development | Exists with URL | Assets loaded from Vite dev server (HMR enabled) |
+| Production | Does not exist | Assets loaded from `webroot/build/` (compiled) |
+
+See [Configuration Guide](docs/development/configuration.md) for details.
+
 ## Important: Subdirectory Deployments
 
 When deploying your CakePHP app under a subdirectory/alias (e.g., `https://example.com/myapp/`), asset URLs are automatically handled using `Router::url()`.
@@ -109,6 +149,9 @@ See the [docs](docs/) folder for detailed documentation:
 
 - [Features](docs/features/) - Usage and helper methods
 - [Development](docs/development/) - Configuration and DDEV setup
+  - [Configuration](docs/development/configuration.md) - Vite and hot file configuration
+  - [DDEV Setup](docs/development/ddev-setup.md) - Complete DDEV guide
+  - [Production](docs/development/production.md) - Production deployment
 
 ## Contributing
 

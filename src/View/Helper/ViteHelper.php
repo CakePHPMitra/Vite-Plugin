@@ -61,10 +61,36 @@ class ViteHelper extends Helper
       return $this->devServerUrl . '/' . $entry;
     }
     if (!file_exists($this->manifestPath)) {
-      // return '<!-- Vite manifest not found -->';
-      throw new \Exception("Vite manifest ($this->manifestPath) not found");
+      $hotExists = file_exists($this->hotFile);
+      $message = "Vite manifest not found at: {$this->manifestPath}\n\n";
+
+      if ($hotExists) {
+        $message .= "The 'hot' file exists but the dev server is not responding.\n";
+        $message .= "Hot file URL: {$this->devServerUrl}\n\n";
+        $message .= "Possible fixes:\n";
+        $message .= "1. Start Vite: npm run dev (or: ddev exec npm run dev)\n";
+        $message .= "2. Check if the URL in the 'hot' file is correct\n";
+        $message .= "3. For DDEV: ensure Vite port 5173 is exposed and allowedHosts is configured\n";
+        $message .= "4. Delete the 'hot' file to use production assets";
+      } else {
+        $message .= "No 'hot' file found and no manifest exists.\n\n";
+        $message .= "For development: run 'npm run dev' to start Vite\n";
+        $message .= "For production: run 'npm run build' to generate the manifest";
+      }
+
+      throw new \Exception($message);
     }
     $manifest = json_decode(file_get_contents($this->manifestPath), true);
+
+    if (!isset($manifest[$entry])) {
+      $availableEntries = implode(', ', array_keys($manifest));
+      throw new \Exception(
+        "Entry '{$entry}' not found in Vite manifest.\n" .
+        "Available entries: {$availableEntries}\n\n" .
+        "Make sure the entry is listed in vite.config.js 'input' array."
+      );
+    }
+
     return Router::url('/build/' . $manifest[$entry]['file']);
   }
 
